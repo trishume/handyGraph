@@ -73,7 +73,10 @@ def plot_data(pdf, data, x_scale, y_scale)
 end
 
 def draw_axes(pdf, width, height, x_scale, y_scale)
-
+  width.times do |x|
+    label = (x * x_scale).to_s
+    draw_text(label, :at => [x.cm - 5, -10], :size => 7)
+  end
 end
 
 def graph(data, width = 19, height = 25)
@@ -87,6 +90,7 @@ def graph(data, width = 19, height = 25)
       # pdf.stroke_axis
       draw_grid(pdf, width, height)
       plot_data(pdf, data, x_scale, y_scale)
+      draw_axes(pdf, width, height, x_scale, y_scale)
     end
   end
 end
