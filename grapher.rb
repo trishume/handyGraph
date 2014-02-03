@@ -55,11 +55,14 @@ def draw_grid(pdf, width, height)
   draw_lines(pdf, height, width, false)
 end
 
-def graph(data, size = [19, 25])
+def graph(data, width = 19, height = 25)
+  scal = scales(data, size)
+
+
   Prawn::Document.generate("output.pdf", :margin => [0,0,0,0]) do |pdf|
-    pdf.bounding_box([(1.3).cm, (26.47).cm], width: 19.cm, height: 25.cm) do
+    pdf.bounding_box([(1.3).cm, (26.47).cm], width: width.cm, height: height.cm) do
       # pdf.stroke_axis
-      draw_grid(pdf, size[0], size[1])
+      draw_grid(pdf, width, height)
     end
   end
 end
