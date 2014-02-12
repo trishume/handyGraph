@@ -39,9 +39,9 @@ def draw_lines(pdf, num, length, vert)
   (num * 10 + 1).times do |x|
     pdf.line_width = case x % 10
       when 0 then 0.8
-      when 5 then 0.5
+      when 5 then 0.4
       else
-        0.2
+        0.15
     end
     pdf.send(op, 0, length.cm, :at => (x/10.0).cm)
     pdf.stroke
@@ -56,7 +56,7 @@ end
 def draw_ex(pdf, x, y, s = 5.0)
   # puts "ex at #{x},#{y}"
   pdf.stroke_color "000000"
-  pdf.line_width = 3.0
+  pdf.line_width = 1.5
   pdf.line [x-s, y-s], [x+s,y+s]
   pdf.line [x-s, y+s], [x+s,y-s]
   pdf.stroke
@@ -73,26 +73,57 @@ def plot_data(pdf, data, x_scale, y_scale)
 end
 
 def draw_axes(pdf, width, height, x_scale, y_scale)
-  width.times do |x|
-    label = (x * x_scale).to_s
-    draw_text(label, :at => [x.cm - 5, -10], :size => 7)
+  pdf.stroke_color "000000"
+  pdf.horizontal_line 0, width.cm,  at: 0.0
+  pdf.vertical_line   0, height.cm, at: 0.0
+  pdf.stroke
+
+  (0..width).each do |x|
+    label = (x * x_scale).floor.to_s
+    pdf.draw_text(label, :at => [x.cm - (2.0*label.length), -10], :size => 7)
+  end
+
+  (0..height).each do |y|
+    label = (y * y_scale).floor.to_s
+    pdf.text_box(label, :at => [-30, y.cm + 2.0], :size => 7,
+      :width => 20, :align => :right)
   end
 end
 
-def graph(data, width = 19, height = 25)
-  x_scale = find_scale(data.keys, width)
-  y_scale = find_scale(data.values, height)
+def graph(data, options = {})
+  options = {
+      layout: :landscape,
+      axes: true,
+      data: true,
+      grid: true,
+      name: "output.pdf"
+    }.merge(options)
 
+  width = 19
+  height = 25
   margin_x = (PAPER_WIDTH - width)/2.0
   margin_y = (PAPER_HEIGHT - height)/2.0
-  Prawn::Document.generate("output.pdf", :margin => [0,0,0,0]) do |pdf|
-    pdf.bounding_box([margin_x.cm, (PAPER_HEIGHT - margin_y).cm], width: width.cm, height: height.cm) do
+
+  # switch for landscape if needed
+  if options[:layout] == :landscape
+    width, height = height, width
+    margin_x, margin_y = margin_y, margin_x
+  end
+
+  x_scale = find_scale(data.keys, width)
+  y_scale = find_scale(data.values, height)
+  # y_scale = 2.0
+
+  Prawn::Document.generate(options[:name], :margin => [0,0,0,0], :page_layout => options[:layout]) do |pdf|
+    pdf.bounding_box([margin_x.cm, pdf.bounds.top - margin_y.cm], width: width.cm, height: height.cm) do
       # pdf.stroke_axis
-      draw_grid(pdf, width, height)
-      plot_data(pdf, data, x_scale, y_scale)
-      draw_axes(pdf, width, height, x_scale, y_scale)
+      draw_grid(pdf, width, height) if options[:grid]
+      plot_data(pdf, data, x_scale, y_scale) if options[:data]
+      draw_axes(pdf, width, height, x_scale, y_scale) if options [:axes]
     end
   end
 end
 
-graph(data)
+graph(data, name: "full.pdf")
+graph(data, name: "trace.pdf", grid: false)
+graph(data, name: "grid.pdf", axes: false, data: false)
