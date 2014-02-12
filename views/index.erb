@@ -1,0 +1,37 @@
+<html>
+<head></head>
+<body>
+  <h1>HandyGraph Traceable Science Grapher</h1>
+  <p>
+    HandyGraph generates PDF graphs that follow the graphing rules of
+    Bell High School's science teachers. These graphs are so accurate that
+    if you were to trace them onto metric graph paper they would be
+    indistinguishable from those done completely by hand.
+  </p>
+  <form action="graph.pdf" method="post">
+    <fieldset>
+      <legend>Options</legend>
+      <input type="checkbox" name="landscape" checked>
+      <label for="landscape">Landscape Orientation</label><br>
+      <input type="checkbox" name="grid" checked>
+      <label for="grid">Include Grid Paper Page</label><br>
+    </fieldset>
+    <fieldset>
+      <legend>Data</legend>
+      <p>
+        Enter your data below as coordinate pairs in the format "x:y" with one pair per line. Once you hit 'Generate' you will get a PDF which you can print on save.
+      </p>
+    <textarea name="points" id="points" cols="80" rows="25">
+50:18
+100:19
+200:20
+500:25
+800:33
+1000:49
+</textarea>
+    </fieldset>
+    <br>
+    <input type="submit" value="Generate">
+  </form>
+</body>
+</html>
