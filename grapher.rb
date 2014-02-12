@@ -3,7 +3,7 @@
 
 require "prawn"
 require "prawn/measurement_extensions"
-require "pry"
+# require "pry"
 
 class Grapher
   PAPER_WIDTH = 21.59

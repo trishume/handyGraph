@@ -9,7 +9,13 @@ by hand.
 I may or may not trace graphs created by this program for my Physics assignments.
 My teacher only said that we had to DRAW the graphs by hand, not find the points.
 
-*Note:* The reason given for why the class always has to draw graphs by hand is apparently "What if you had to do Physics when the power is out?"
+*Note: The reason given for why the class always has to draw graphs by hand is apparently "What if you have to do Physics when the power is out?"*
+
+## Web App
+
+To run the web app first run `bundle install` to install the require Ruby gems.
+Then run `ruby app.rb` to start the server.
+You can then find it at `localhost:4567`.
 
 ## Disclaimer
 
