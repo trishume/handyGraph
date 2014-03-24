@@ -3,6 +3,7 @@
 
 require "prawn"
 require "prawn/measurement_extensions"
+require 'linefit'
 # require "pry"
 
 class Grapher
@@ -20,7 +21,8 @@ class Grapher
         grid: true,
         name: "output.pdf",
         save: true,
-        single_page: false
+        single_page: false,
+        fit: true
       }.merge(options)
 
     calc_attrs
@@ -123,6 +125,31 @@ class Grapher
     end
   end
 
+  def calc_fit_line
+    line_fit = LineFit.new
+    line_fit.setData(data.keys,data.values)
+    line_fit.coefficients
+  end
+
+  def draw_fit_line(pdf)
+    intercept, slope = calc_fit_line
+    puts "Calculated fit of #{slope}*x + #{intercept}"
+
+    start = [0.0, (intercept / @y_scale).cm]
+    finish_y = slope*(@width*@x_scale) + intercept
+    finish = [@width.cm,(finish_y/@y_scale).cm]
+
+    pdf.stroke_color "000000"
+    pdf.line_width = 2.0
+    pdf.line start, finish
+    pdf.stroke
+
+    # draw stroke equation
+    label = "Line of Best Fit:\ny = #{slope.round(3)}*x+#{intercept.round(3)}"
+    pdf.text_box(label, :at => [20, @height.cm], :size => 18,
+        :width => 10.cm, :align => :left)
+  end
+
   def graph
     # @y_scale = 2.0
     pdf = Prawn::Document.new(:margin => [0,0,0,0], :page_layout => @options[:layout])
@@ -132,6 +159,7 @@ class Grapher
       pdf.start_new_page unless @options[:single_page]
       plot_data(pdf) if @options[:data]
       draw_axes(pdf) if @options [:axes]
+      draw_fit_line(pdf) if @options[:fit]
     end
     if @options[:save]
       pdf.render_file @options[:name]
@@ -151,7 +179,7 @@ if __FILE__ == $0
     1000 => 49
   }
 
-  g = Grapher.new(data, name: "full.pdf")
+  g = Grapher.new(data, name: "trace.pdf", grid: false, single_page: true)
 
   g.graph()
   # g.graph(name: "trace.pdf", grid: false, single_page: true)

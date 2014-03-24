@@ -6,6 +6,7 @@ GEM
     backports (3.5.0)
     coderay (1.0.9)
     hashery (2.1.1)
+    linefit (0.3.1)
     method_source (0.8.1)
     multi_json (1.8.4)
     pdf-reader (1.3.3)
@@ -47,6 +48,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  linefit
   prawn
   pry
   sinatra
