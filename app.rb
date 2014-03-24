@@ -28,8 +28,8 @@ post '/graph.pdf' do
   }
 
   data = parse_data(params[:points])
-  g = Grapher.new(data)
-  file = g.graph(options)
+  g = Grapher.new(data, options)
+  file = g.graph()
 
   content_type 'application/pdf'
   # attachment 'graph.pdf'

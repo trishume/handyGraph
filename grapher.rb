@@ -11,8 +11,35 @@ class Grapher
 
   attr_accessor :data
 
-  def initialize(d)
+  def initialize(d, options = {})
     @data = d
+    @options = {
+        layout: :landscape,
+        axes: true,
+        data: true,
+        grid: true,
+        name: "output.pdf",
+        save: true,
+        single_page: false
+      }.merge(options)
+
+    calc_attrs
+  end
+
+  def calc_attrs
+    @width = 19
+    @height = 25
+    @margin_x = (PAPER_WIDTH - @width)/2.0
+    @margin_y = (PAPER_HEIGHT - @height)/2.0
+
+    # switch for landscape if needed
+    if @options[:layout] == :landscape
+      @width, @height = @height, @width
+      @margin_x, @margin_y = @margin_y, @margin_x
+    end
+
+    @x_scale = find_scale(data.keys, @width)
+    @y_scale = find_scale(data.values, @height)
   end
 
   def round_scale(exact_scale)
@@ -46,9 +73,9 @@ class Grapher
     end
   end
 
-  def draw_grid(pdf, width, height)
-    draw_lines(pdf, width, height, true)
-    draw_lines(pdf, height, width, false)
+  def draw_grid(pdf)
+    draw_lines(pdf, @width, @height, true)
+    draw_lines(pdf, @height, @width, false)
   end
 
   def draw_ex(pdf, x, y, s = 5.0)
@@ -60,69 +87,54 @@ class Grapher
     pdf.stroke
   end
 
-  def plot_data(pdf, x_scale, y_scale)
-    puts "plotting at scale #{x_scale}, #{y_scale}"
+  def plot_data(pdf)
+    puts "plotting at scale #{@x_scale}, #{@y_scale}"
 
     data.each do |x, y|
-      x_paper = (x / x_scale).cm
-      y_paper = (y / y_scale).cm
+      x_paper = (x / @x_scale).cm
+      y_paper = (y / @y_scale).cm
       draw_ex(pdf, x_paper, y_paper)
     end
   end
 
-  def draw_axes(pdf, width, height, x_scale, y_scale)
+  def axis_label(n, scale)
+    # puts "Label for #{n} - #{scale}"
+    if scale < 1.0
+      (n * scale).to_s
+    else
+      (n * scale).floor.to_s
+    end
+  end
+
+  def draw_axes(pdf)
     pdf.stroke_color "000000"
-    pdf.horizontal_line 0, width.cm,  at: 0.0
-    pdf.vertical_line   0, height.cm, at: 0.0
+    pdf.horizontal_line 0, @width.cm,  at: 0.0
+    pdf.vertical_line   0, @height.cm, at: 0.0
     pdf.stroke
 
-    (0..width).each do |x|
-      label = (x * x_scale).floor.to_s
+    (0..@width).each do |x|
+      label = axis_label(x,@x_scale)
       pdf.draw_text(label, :at => [x.cm - (2.0*label.length), -10], :size => 7)
     end
 
-    (0..height).each do |y|
-      label = (y * y_scale).floor.to_s
-      pdf.text_box(label, :at => [-30, y.cm + 2.0], :size => 7,
+    (0..@height).each do |y|
+      pdf.text_box(axis_label(y,@y_scale), :at => [-30, y.cm + 2.0], :size => 7,
         :width => 20, :align => :right)
     end
   end
 
-  def graph(options = {})
-    options = {
-        layout: :landscape,
-        axes: true,
-        data: true,
-        grid: true,
-        name: "output.pdf",
-        save: true,
-        single_page: false
-      }.merge(options)
-
-    width = 19
-    height = 25
-    margin_x = (PAPER_WIDTH - width)/2.0
-    margin_y = (PAPER_HEIGHT - height)/2.0
-
-    # switch for landscape if needed
-    if options[:layout] == :landscape
-      width, height = height, width
-      margin_x, margin_y = margin_y, margin_x
-    end
-
-    x_scale = find_scale(data.keys, width)
-    y_scale = find_scale(data.values, height)
-    # y_scale = 2.0
-    pdf = Prawn::Document.new(:margin => [0,0,0,0], :page_layout => options[:layout])
-    pdf.bounding_box([margin_x.cm, pdf.bounds.top - margin_y.cm], width: width.cm, height: height.cm) do
+  def graph
+    # @y_scale = 2.0
+    pdf = Prawn::Document.new(:margin => [0,0,0,0], :page_layout => @options[:layout])
+    pdf.bounding_box([@margin_x.cm, pdf.bounds.top - @margin_y.cm], width: @width.cm, height: @height.cm) do
       # pdf.stroke_axis
-      draw_grid(pdf, width, height) if options[:grid]
-      pdf.start_new_page unless options[:single_page]
-      plot_data(pdf, x_scale, y_scale) if options[:data]
-      draw_axes(pdf, width, height, x_scale, y_scale) if options [:axes]
+      draw_grid(pdf) if @options[:grid]
+      pdf.start_new_page unless @options[:single_page]
+      plot_data(pdf) if @options[:data]
+      draw_axes(pdf) if @options [:axes]
     end
-    if options[:save]
-      pdf.render_file options[:name]
+    if @options[:save]
+      pdf.render_file @options[:name]
     else
       pdf.render
     end
@@ -139,9 +151,9 @@ if __FILE__ == $0
     1000 => 49
   }
 
-  g = Grapher.new(data)
+  g = Grapher.new(data, name: "full.pdf")
 
-  g.graph(name: "full.pdf")
-  g.graph(name: "trace.pdf", grid: false, single_page: true)
-  g.graph(name: "grid.pdf", axes: false, data: false, single_page: true)
+  g.graph()
+  # g.graph(name: "trace.pdf", grid: false, single_page: true)
+  # g.graph(name: "grid.pdf", axes: false, data: false, single_page: true)
 end
