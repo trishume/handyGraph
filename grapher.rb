@@ -22,8 +22,19 @@ class Grapher
         name: "output.pdf",
         save: true,
         single_page: false,
-        fit: true
+        fit_line: true,
+        offset_x: 0.0
       }.merge(options)
+
+    calc_attrs
+  end
+
+  def apply_exponent(n)
+    new_data = {}
+    @data.each do |k,v|
+      new_data[k**n] = v
+    end
+    @data = new_data
 
     calc_attrs
   end
@@ -31,7 +42,7 @@ class Grapher
   def calc_attrs
     @width = 19
     @height = 25
-    @margin_x = (PAPER_WIDTH - @width)/2.0
+    @margin_x = (PAPER_WIDTH - @width)/2.0 + @options[:offset_x]
     @margin_y = (PAPER_HEIGHT - @height)/2.0
 
     # switch for landscape if needed
@@ -102,7 +113,7 @@ class Grapher
   def axis_label(n, scale)
     # puts "Label for #{n} - #{scale}"
     if scale < 1.0
-      (n * scale).to_s
+      (n * scale).round(3).to_s
     else
       (n * scale).floor.to_s
     end
@@ -128,14 +139,16 @@ class Grapher
   def calc_fit_line
     line_fit = LineFit.new
     line_fit.setData(data.keys,data.values)
-    line_fit.coefficients
+    line_fit
   end
 
   def draw_fit_line(pdf)
-    intercept, slope = calc_fit_line
+    line_fit = calc_fit_line
+    intercept, slope = line_fit.coefficients
     puts "Calculated fit of #{slope}*x + #{intercept}"
 
-    start = [0.0, (intercept / @y_scale).cm]
+    x_intercept = (-intercept/slope)
+    start = [[0.0,x_intercept/@x_scale].max.cm, [(intercept / @y_scale),0.0].max.cm]
     finish_y = slope*(@width*@x_scale) + intercept
     finish = [@width.cm,(finish_y/@y_scale).cm]
 
@@ -145,9 +158,9 @@ class Grapher
     pdf.stroke
 
     # draw stroke equation
-    label = "Line of Best Fit:\ny = #{slope.round(3)}*x+#{intercept.round(3)}"
-    pdf.text_box(label, :at => [20, @height.cm], :size => 18,
-        :width => 10.cm, :align => :left)
+    label = "Line of Best Fit:\ny = #{slope.round(3)}*x+#{intercept.round(3)}\nr-squared: #{line_fit.rSquared.round(3)}"
+    pdf.text_box(label, :at => [20.0, @height.cm], :size => 18,
+        :width => 6.cm, :align => :left)
   end
 
   def graph
@@ -159,7 +172,7 @@ class Grapher
       pdf.start_new_page unless @options[:single_page]
       plot_data(pdf) if @options[:data]
       draw_axes(pdf) if @options [:axes]
-      draw_fit_line(pdf) if @options[:fit]
+      draw_fit_line(pdf) if @options[:fit_line]
     end
     if @options[:save]
       pdf.render_file @options[:name]
@@ -180,7 +193,7 @@ if __FILE__ == $0
   }
 
   g = Grapher.new(data, name: "trace.pdf", grid: false, single_page: true)
-
+  # g.apply_exponent(2)
   g.graph()
   # g.graph(name: "trace.pdf", grid: false, single_page: true)
   # g.graph(name: "grid.pdf", axes: false, data: false, single_page: true)
